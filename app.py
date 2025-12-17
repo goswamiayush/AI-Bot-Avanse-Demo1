@@ -74,7 +74,7 @@ def get_gemini_response(user_query):
     # Model A: The Researcher + Logic Engine
     # We ask it to return JSON to easily separate the "Answer" from the "Suggestions"
     model = genai.GenerativeModel(
-        model_name='gemini-1.5-flash',
+        model_name='gemini-1.5-flash-002'  
         tools='google_search_retrieval',
         system_instruction="""
         You are an expert Overseas Education Counselor for Indian Students.
