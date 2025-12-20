@@ -205,7 +205,7 @@ client = genai.Client(api_key=api_key)
 # --- 5. STATE MANAGEMENT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I am your **Avanse Education Expert**. \n\nI can help you check **Visa Acceptance Rates**, **University Fees**, or **Loan Eligibility**. What shall we explore?"}
+        {"role": "assistant", "content": "Hello! I am your **Avanse Education Expert**. \n\nI can help you check anything on International Studies such as **Visa Acceptance Rates**, **University Fees**, or **Loan Eligibility**. What shall we explore?"}
     ]
 if "suggestions" not in st.session_state:
     st.session_state.suggestions = ["Visa acceptance rate for USA", "Tuition fees for MS CS in Germany", "Scholarships for Indians"]
