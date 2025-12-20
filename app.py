@@ -4,89 +4,173 @@ from google.genai import types
 import json
 import re
 
-# --- 1. CONFIGURATION: SLEEK & CENTERED ---
+# --- 1. CONFIGURATION: MOBILE-FIRST ---
 st.set_page_config(
     page_title="Avanse AI",
-    page_icon="🎓",
+    page_icon="💬",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. MODERN CSS ---
+# --- 2. ADVANCED CSS (iMessage Style) ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    /* IMPORT IOS FONT */
+    @import url('-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
     
-    .stApp { background-color: #F8F9FB; font-family: 'Inter', sans-serif; }
+    /* GLOBAL RESET */
+    .stApp {
+        background-color: #FFFFFF;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
     
-    /* HIDE CLUTTER */
+    /* HIDE STREAMLIT ELEMENTS */
     #MainMenu, footer, header {visibility: hidden;}
+    div[data-testid="stToolbar"] {visibility: hidden;}
     
-    /* STICKY HEADER */
+    /* PADDING FOR FIXED HEADER/FOOTER */
+    .block-container {
+        padding-top: 6rem !important;
+        padding-bottom: 10rem !important;
+    }
+
+    /* --- CHAT MESSAGE CONTAINERS --- */
+    
+    /* Remove default Streamlit styling */
+    .stChatMessage {
+        background-color: transparent !important;
+        border: none !important;
+    }
+    
+    /* HIDE AVATARS (iMessage style doesn't use them much) */
+    div[data-testid="chatAvatarIcon-user"], div[data-testid="chatAvatarIcon-assistant"] {
+        display: none;
+    }
+
+    /* --- USER BUBBLE (Blue, Right Aligned) --- */
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) {
+        flex-direction: row-reverse;
+        text-align: right;
+    }
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) div[data-testid="stMarkdownContainer"] {
+        background-color: #007AFF; /* Apple Blue */
+        color: white;
+        padding: 12px 18px;
+        border-radius: 20px 20px 4px 20px; /* Sharp bottom-right */
+        max-width: 80%;
+        margin-left: auto;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    /* Force text color inside user bubble */
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) p {
+        color: white !important;
+    }
+
+    /* --- AI BUBBLE (Gray, Left Aligned) --- */
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-assistant"]) div[data-testid="stMarkdownContainer"] {
+        background-color: #E5E5EA; /* Apple Gray */
+        color: #000000;
+        padding: 12px 18px;
+        border-radius: 20px 20px 20px 4px; /* Sharp bottom-left */
+        max-width: 85%;
+        margin-right: auto;
+    }
+
+    /* --- HEADER (Glassmorphism) --- */
     .sticky-header {
         position: fixed; top: 0; left: 0; width: 100%;
-        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-        border-bottom: 1px solid #eaeaea; padding: 1rem 0;
-        z-index: 999; text-align: center;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 15px 0;
+        z-index: 1000;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
-    .header-logo { color: #003366; font-size: 1.2rem; font-weight: 700; margin: 0; }
-    .header-badge {
-        background: linear-gradient(135deg, #d4af37 0%, #f3d467 100%);
-        color: #003366; font-size: 0.6rem; font-weight: 700;
-        padding: 3px 8px; border-radius: 12px; margin-left: 8px; vertical-align: middle;
+    .header-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
     }
+    .header-status {
+        font-size: 11px;
+        color: #8E8E93; /* Apple secondary label */
+        margin-top: 2px;
+    }
+
+    /* --- SUGGESTION CHIPS (Horizontal Scroll) --- */
+    .suggestion-container {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 0;
+        margin-bottom: 10px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Hide scrollbar Firefox */
+    }
+    .suggestion-container::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome */
     
-    .block-container { padding-top: 5rem !important; padding-bottom: 8rem !important; }
-
-    /* CHAT BUBBLES */
-    .stChatMessage { background-color: transparent !important; border: none !important; }
-    
-    /* ASSISTANT */
-    div[data-testid="chatAvatarIcon-assistant"] + div {
-        background-color: #FFFFFF; border: 1px solid #E5E7EB;
-        border-radius: 4px 18px 18px 18px; padding: 1.2rem;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02); color: #1F2937;
-    }
-
-    /* USER */
-    div[data-testid="chatAvatarIcon-user"] + div {
-        background: linear-gradient(135deg, #003366 0%, #004080 100%);
-        color: #FFFFFF !important; border-radius: 18px 4px 18px 18px;
-        padding: 1rem 1.5rem;
-    }
-    div[data-testid="chatAvatarIcon-user"] + div p { color: #FFFFFF !important; }
-
-    /* SOURCE CHIPS */
-    .source-container { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
-    .source-chip {
-        display: inline-flex; align-items: center; background-color: #F3F4F6;
-        border: 1px solid #E5E7EB; border-radius: 20px; padding: 4px 10px;
-        font-size: 0.7rem; color: #4B5563; text-decoration: none;
-    }
-    .source-chip:hover { background-color: #E0E7FF; color: #003366; border-color: #003366; }
-
-    /* SUGGESTIONS */
-    .suggestion-label { font-size: 0.75rem; color: #6B7280; font-weight: 600; text-transform: uppercase; margin: 10px 0; }
     .stButton button {
-        width: 100%; border-radius: 12px; border: 1px solid #E5E7EB;
-        background-color: white; color: #003366; padding: 0.6rem;
-        text-align: left; font-size: 0.85rem;
+        border-radius: 20px;
+        border: 1px solid #E5E5EA;
+        background-color: #FFFFFF;
+        color: #007AFF;
+        font-weight: 500;
+        font-size: 13px;
+        padding: 6px 16px;
+        white-space: nowrap;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        transition: all 0.2s;
     }
-    .stButton button:hover { border-color: #d4af37; background-color: #FFFCF2; }
+    .stButton button:hover {
+        background-color: #F2F2F7;
+        border-color: #007AFF;
+        transform: scale(1.02);
+    }
 
-    /* VIDEO CONTAINER */
-    .video-label { font-size: 0.8rem; font-weight: 600; color: #333; margin-top: 15px; margin-bottom: 5px; }
+    /* --- VIDEO CARDS (Grid View) --- */
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .video-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #E5E5EA;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* --- SOURCE LINKS --- */
+    .source-link {
+        font-size: 11px;
+        color: #8E8E93;
+        text-decoration: none;
+        margin-right: 10px;
+        display: inline-block;
+        margin-top: 5px;
+    }
+    .source-link:hover { color: #007AFF; text-decoration: underline; }
+
 </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
+# --- 3. HEADER UI ---
 st.markdown("""
 <div class="sticky-header">
-    <div class="header-logo">AVANSE<span class="header-badge">AI Counselor</span></div>
+    <div class="header-title">Avanse Counselor</div>
+    <div class="header-status">Online • AI Assistant</div>
 </div>
 """, unsafe_allow_html=True)
 
-# --- API ---
+# --- 4. API & SETUP ---
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except:
@@ -95,20 +179,19 @@ except:
 
 client = genai.Client(api_key=api_key)
 
-# --- STATE ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hi! I'm your dedicated education expert. Ask me about **Universities**, **Fees**, or **Visa timelines**."}
+        {"role": "assistant", "content": "Hi there! 👋 I can help you research universities, check visa fees, or find scholarships. What's on your mind?"}
     ]
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = ["💰 Cost of MS in USA vs UK", "📅 Fall 2025 Deadlines", "🏆 Top Data Science Universities"]
+    st.session_state.suggestions = ["Compare MS in US vs UK", "Visa acceptance rates 2024", "Scholarships for Indians"]
 
-# --- LOGIC ---
-def extract_json_and_sources(response):
+# --- 5. LOGIC ENGINE ---
+def extract_data(response):
     text = response.text if response.text else ""
     sources = []
     
-    # Grounding Sources
+    # Grounding
     if response.candidates and response.candidates[0].grounding_metadata:
         md = response.candidates[0].grounding_metadata
         if md.grounding_chunks:
@@ -127,7 +210,7 @@ def extract_json_and_sources(response):
 
     answer = data.get("answer")
     next_questions = data.get("next_questions", [])
-    videos = data.get("videos", []) # Extract videos
+    videos = data.get("videos", [])
 
     if not answer:
         answer = re.sub(r'next_questions:.*', '', text, flags=re.DOTALL).strip()
@@ -137,31 +220,25 @@ def extract_json_and_sources(response):
     return answer, next_questions, sources, videos
 
 def format_history(messages):
-    return "\n".join([f"{m['role']}: {m['content']}" for m in messages[-6:]])
+    return "\n".join([f"{m['role']}: {m['content']}" for m in messages[-4:]])
 
 def get_gemini_response(query, history):
     try:
-        # Prompt explicitly asks for VIDEO links
         system_prompt = f"""
-        You are an expert AI Counselor for Avanse Financial Services.
+        You are a helpful education counselor.
         
         TASK:
-        1. Search Google for 2024/2025 data for: "{query}"
+        1. Search Google for 2024/2025 data: "{query}"
         2. Context: {history}
         3. OUTPUT: JSON ONLY.
         
-        JSON STRUCTURE:
+        JSON SCHEMA:
         {{
-            "answer": "Markdown answer. Use bullet points. Keep it concise.",
-            "next_questions": ["Short Follow-up 1", "Short Follow-up 2", "Short Follow-up 3"],
-            "videos": ["https://www.youtube.com/watch?v=example1", "https://www.youtube.com/watch?v=example2"]
+            "answer": "Clean markdown answer. Use bolding for numbers/fees.",
+            "next_questions": ["Short Q1", "Short Q2", "Short Q3"],
+            "videos": ["https://www.youtube.com/watch?v=..."] (Include 1-2 highly relevant YouTube links)
         }}
-        
-        IMPORTANT:
-        - Only include "videos" if you find valid YouTube links in the search results relevant to the topic.
-        - If no videos found, leave the array empty [].
         """
-
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=query,
@@ -171,82 +248,84 @@ def get_gemini_response(query, history):
                 system_instruction=system_prompt
             )
         )
-        return extract_json_and_sources(response)
-
+        return extract_data(response)
     except Exception as e:
-        return f"⚠️ Connection Error: {str(e)}", [], [], []
+        return f"⚠️ Error: {str(e)}", [], [], []
 
-# --- RENDER HELPER ---
-def render_message(role, content, sources=None, videos=None):
-    with st.chat_message(role):
-        st.markdown(content)
+# --- 6. RENDER FUNCTIONS ---
+
+def render_chat_message(msg):
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
         
-        # Sources
-        if sources:
-            links_html = '<div class="source-container">'
-            for s in sources:
-                links_html += f'<a href="{s["url"]}" target="_blank" class="source-chip">🔗 {s["title"][:20]}..</a>'
-            links_html += '</div>'
-            st.markdown(links_html, unsafe_allow_html=True)
+        # Sources (Subtle footer)
+        if msg.get("sources"):
+            st.markdown("---")
+            source_html = ""
+            for s in msg["sources"][:3]: # Limit to 3 sources for cleanliness
+                source_html += f'<a href="{s["url"]}" target="_blank" class="source-link">{s["title"][:20]}... ↗</a>'
+            st.markdown(source_html, unsafe_allow_html=True)
             
-        # Video Embeds (Modern Accordion)
-        if videos:
-            with st.expander("📺 Watch Related Videos", expanded=False):
-                cols = st.columns(len(videos))
-                for i, vid_url in enumerate(videos):
-                    # Basic validation to ensure it's a video link
-                    if "youtube.com" in vid_url or "youtu.be" in vid_url:
-                        st.video(vid_url)
-                    else:
-                        st.markdown(f"[Watch Video]({vid_url})")
+        # Videos (Modern Cards)
+        if msg.get("videos"):
+            st.markdown("**Watch Related:**")
+            # Use columns for a "Grid" look
+            cols = st.columns(len(msg["videos"]))
+            for i, vid in enumerate(msg["videos"]):
+                if "youtube" in vid or "youtu.be" in vid:
+                    cols[i].video(vid)
 
-# --- UI LOOP ---
+# --- 7. MAIN UI LOOP ---
 
-# 1. History
+# A. Render History
 for msg in st.session_state.messages:
-    render_message(msg["role"], msg["content"], msg.get("sources"), msg.get("videos"))
+    render_chat_message(msg)
 
-# 2. Suggestions
-st.markdown('<div class="suggestion-label">Explore further</div>', unsafe_allow_html=True)
-with st.container():
-    selected_suggestion = None
-    if st.session_state.suggestions:
-        cols = st.columns(len(st.session_state.suggestions))
-        for i, suggestion in enumerate(st.session_state.suggestions):
-            if cols[i].button(suggestion, key=f"sugg_{len(st.session_state.messages)}_{i}"):
-                selected_suggestion = suggestion
+# B. Suggestions (Explore Further)
+st.markdown('<div style="font-size: 12px; color: #8E8E93; margin-top: 20px; margin-bottom: 5px; font-weight: 500;">EXPLORE FURTHER</div>', unsafe_allow_html=True)
 
-# 3. Input
-user_input = st.chat_input("Type your question here...")
+# Horizontal layout for buttons using columns
+selected_suggestion = None
+if st.session_state.suggestions:
+    # Hack: Streamlit columns usually stack on mobile, but for 3 items it works okay.
+    # For true horizontal scroll, we rely on the CSS tweaks above.
+    cols = st.columns(len(st.session_state.suggestions))
+    for i, suggestion in enumerate(st.session_state.suggestions):
+        if cols[i].button(suggestion, key=f"sugg_{len(st.session_state.messages)}_{i}"):
+            selected_suggestion = suggestion
+
+# C. Input
+user_input = st.chat_input("iMessage...")
 if selected_suggestion: user_input = selected_suggestion
 
+# D. Interaction Logic
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     st.rerun()
 
-# 4. Generation
 if st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant"):
-        with st.status("Searching...", expanded=False) as status:
+        # No spinner text, just a clean loading state if possible, or minimal text
+        with st.status("Reading...", expanded=False) as status:
             history_text = format_history(st.session_state.messages)
             answer, next_q, sources, videos = get_gemini_response(st.session_state.messages[-1]["content"], history_text)
-            status.update(label="Complete", state="complete")
+            status.update(label="Sent", state="complete")
         
-        # Render the response immediately
         st.markdown(answer)
+        
+        # Render extras immediately for "pop" effect
         if sources:
-            links_html = '<div class="source-container">'
-            for s in sources:
-                links_html += f'<a href="{s["url"]}" target="_blank" class="source-chip">🔗 {s["title"][:20]}..</a>'
-            links_html += '</div>'
-            st.markdown(links_html, unsafe_allow_html=True)
+            source_html = "<br>"
+            for s in sources[:3]:
+                source_html += f'<a href="{s["url"]}" target="_blank" class="source-link">{s["title"][:20]}... ↗</a>'
+            st.markdown(source_html, unsafe_allow_html=True)
+            
         if videos:
-            with st.expander("📺 Watch Related Videos", expanded=True): # Expanded by default for "Wow" factor
-                for vid_url in videos:
-                    if "youtube.com" in vid_url or "youtu.be" in vid_url:
-                        st.video(vid_url)
+            st.markdown("**Watch Related:**")
+            cols = st.columns(len(videos))
+            for i, vid in enumerate(videos):
+                cols[i].video(vid)
 
-    # Save State
     st.session_state.messages.append({
         "role": "assistant", 
         "content": answer, 
