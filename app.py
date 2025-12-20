@@ -15,144 +15,74 @@ st.set_page_config(
 # --- 2. THE "REPAIR" CSS ---
 st.markdown("""
 <style>
-    /* RESET & FONTS */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    
-    .stApp {
-        background-color: #F4F6F9; /* High-end Fintech Grey */
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* HIDE DEFAULT ELEMENTS */
-    #MainMenu, footer, header {visibility: hidden;}
-    div[data-testid="stToolbar"] {visibility: hidden;}
-    
-    /* LAYOUT PADDING (Fixes Input Overlap & Centering) */
-    .block-container {
-        padding-top: 6rem !important;
-        padding-bottom: 10rem !important;
-        max-width: 900px !important; /* Constrain width for readability */
-        margin: 0 auto !important;
-    }
-
-    /* --- CHAT BUBBLES (UPDATED SELECTORS) --- */
-    
-    /* 1. Container Fix */
+    /* 1. FORCE LAYOUT CONTAINER TO FULL WIDTH */
     div[data-testid="stChatMessage"] {
-        background-color: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        margin-bottom: 20px !important;
-        width: 100% !important;
         display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin-bottom: 1rem !important;
+        background: transparent !important;
+        border: none !important;
     }
 
-    /* 2. USER BUBBLE (Right Side - Blue) */
+    /* 2. USER BUBBLE (RIGHT ALIGN) */
+    /* We detect the USER avatar and flip the row direction */
     div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) {
         flex-direction: row-reverse !important;
     }
-    
+
+    /* Style the Markdown Container inside the User Message */
     div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) div[data-testid="stMarkdownContainer"] {
-        background: linear-gradient(135deg, #0056b3 0%, #004494 100%) !important;
-        color: white !important;
-        padding: 15px 20px !important;
-        border-radius: 20px 20px 4px 20px !important;
-        box-shadow: 0 4px 10px rgba(0, 86, 179, 0.2) !important;
-        margin-left: auto !important;
-        margin-right: 10px !important;
-        text-align: left !important; /* Force text left inside bubble */
+        background-color: #007AFF !important; /* Blue */
+        color: #ffffff !important;
+        padding: 12px 16px !important;
+        border-radius: 20px 20px 4px 20px !important; /* Bubble Shape */
+        max-width: 75% !important;
+        margin-left: auto !important; /* Pushes to right */
+        margin-right: 0 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
     
-    /* Force Text Color White for User */
+    /* Force text color to white for User */
     div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) p,
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) li {
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) div {
         color: #ffffff !important;
     }
 
-    /* 3. ASSISTANT BUBBLE (Left Side - White) */
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-assistant"]) div[data-testid="stMarkdownContainer"] {
-        background-color: #FFFFFF !important;
-        color: #1F2937 !important;
-        padding: 15px 25px !important;
-        border-radius: 20px 20px 20px 4px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-        border: 1px solid #E5E7EB !important;
-        margin-right: auto !important;
-        margin-left: 10px !important;
-        text-align: left !important;
+    /* 3. ASSISTANT BUBBLE (LEFT ALIGN) */
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-assistant"]) {
+        flex-direction: row !important; /* Normal direction */
     }
 
-    /* Hide Avatars completely for cleaner look */
-    div[data-testid="chatAvatarIcon-user"], div[data-testid="chatAvatarIcon-assistant"] {
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-assistant"]) div[data-testid="stMarkdownContainer"] {
+        background-color: #FFFFFF !important;
+        color: #333333 !important;
+        padding: 12px 16px !important;
+        border-radius: 20px 20px 20px 4px !important;
+        max-width: 85% !important;
+        margin-right: auto !important; /* Pushes to left */
+        margin-left: 0 !important;
+        border: 1px solid #E5E5EA !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    }
+
+    /* 4. HIDE AVATARS (Clean Look) */
+    div[data-testid="chatAvatarIcon-user"],
+    div[data-testid="chatAvatarIcon-assistant"] {
         display: none !important;
     }
 
-    /* --- SOURCE & VIDEO CARDS --- */
-    
-    .card-container {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 15px;
+    /* 5. FIX PADDING ISSUES */
+    .stApp {
+        background-color: #F2F2F7 !important;
     }
-    
-    /* Source Pill */
-    .source-pill {
-        display: flex; align-items: center; gap: 6px;
-        background: #FFFFFF; border: 1px solid #E0E0E0;
-        border-radius: 30px; padding: 6px 14px;
-        text-decoration: none !important;
-        color: #333 !important; font-size: 12px; font-weight: 500;
-        transition: all 0.2s;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    .block-container {
+        padding-top: 5rem !important;
+        padding-bottom: 10rem !important;
     }
-    .source-pill:hover {
-        border-color: #0056b3; color: #0056b3 !important; transform: translateY(-1px);
-    }
-
-    /* Video Thumbnail Card (Prevents Black Box) */
-    .video-card {
-        background: white; border-radius: 12px;
-        border: 1px solid #eee; overflow: hidden;
-        width: 220px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        text-decoration: none !important; transition: transform 0.2s;
-        display: block;
-    }
-    .video-card:hover { transform: scale(1.02); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .video-thumb {
-        width: 100%; height: 120px; object-fit: cover; background: #000;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .play-icon { font-size: 30px; color: white; opacity: 0.8; }
-    .video-meta { padding: 10px; }
-    .video-title { font-size: 12px; font-weight: 600; color: #333; line-height: 1.4; }
-    .video-source { font-size: 10px; color: #888; margin-top: 4px; text-transform: uppercase; }
-
-    /* --- SUGGESTIONS (Bottom Floating) --- */
-    .suggestion-dock {
-        position: fixed; bottom: 5rem; left: 0; right: 0;
-        background: linear-gradient(to top, #F4F6F9 85%, transparent 100%);
-        padding: 15px 0; z-index: 100;
-        text-align: center;
-    }
-    .stButton button {
-        border-radius: 20px !important;
-        border: 1px solid #D0D5DD !important;
-        background-color: white !important;
-        color: #344054 !important;
-        font-size: 13px !important;
-        padding: 8px 16px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-    }
-    .stButton button:hover {
-        border-color: #0056b3 !important;
-        color: #0056b3 !important;
-        background-color: #F0F9FF !important;
-    }
-
 </style>
 """, unsafe_allow_html=True)
-
 # --- 3. PROFESSIONAL HEADER ---
 st.markdown("""
 <div style="position:fixed; top:0; left:0; width:100%; background:rgba(255,255,255,0.98); border-bottom:1px solid #E5E7EB; z-index:10000; padding:12px 0; text-align:center; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
