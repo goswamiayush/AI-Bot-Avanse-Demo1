@@ -190,7 +190,7 @@ def get_ai_response(query, history):
     
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.5-flash-lite',
             contents=f"History: {history}\nUser Query: {query}",
             config=types.GenerateContentConfig(
                 temperature=0.3,
