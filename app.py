@@ -176,7 +176,7 @@ def get_gemini_response(user_query, chat_history):
 
         # Generate
         response = client.models.generate_content(
-            model='gemini-2.0-flash', 
+            model='gemini-2.5-flash', 
             contents=f"User Query: {user_query}. Provide specific details.",
             config=types.GenerateContentConfig(
                 temperature=0.3,
