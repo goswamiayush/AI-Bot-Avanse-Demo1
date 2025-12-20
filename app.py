@@ -114,7 +114,7 @@ def get_ai_response(query, history):
     try:
         # call the API without strict JSON enforcement
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=f"History: {history}\nUser Query: {query}",
             config=types.GenerateContentConfig(
                 temperature=0.3,
