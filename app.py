@@ -1,167 +1,132 @@
 import streamlit as st
-import google.generativeai as genai
-import time
+from google import genai
+from google.genai import types
 import json
+import time
 
-# --- 1. CONFIGURATION & SETUP ---
-st.set_page_config(
-    page_title="UniGuide AI",
-    page_icon="🎓",
-    layout="centered"
-)
+# --- 1. CONFIGURATION ---
+st.set_page_config(page_title="UniGuide AI (v2.0)", page_icon="🎓", layout="centered")
 
-# Custom CSS for a "Beautiful" Interface
+# Custom CSS for the "Beautiful" UI
 st.markdown("""
 <style>
-    /* Chat Bubble Styling */
-    .stChatMessage {
-        border-radius: 15px; 
-        padding: 10px; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    /* Suggestion Button Styling */
-    .stButton button {
-        border-radius: 20px;
-        border: 1px solid #E0E0E0;
-        background-color: #F8F9FA;
-        color: #424242;
-        font-size: 0.85rem;
-        padding: 0.5rem 1rem;
-        transition: all 0.2s;
-    }
-    .stButton button:hover {
-        border-color: #6C63FF;
-        color: #6C63FF;
-        background-color: #F0F0FF;
-    }
-    /* Header Styling */
-    h1 { color: #2C3E50; }
-    .caption { color: #7F8C8D; }
+    .stChatMessage {border-radius: 15px; padding: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+    .stButton button {border-radius: 20px; background-color: #F8F9FA; border: 1px solid #E0E0E0;}
+    .stButton button:hover {border-color: #6C63FF; color: #6C63FF;}
 </style>
 """, unsafe_allow_html=True)
 
-# API Setup (Robust error handling for missing keys)
+# API Setup
 try:
-    # Try getting key from Streamlit Secrets (Production) or local environment
     api_key = st.secrets["GEMINI_API_KEY"]
 except:
     st.error("⚠️ API Key missing. Please set GEMINI_API_KEY in Streamlit secrets.")
     st.stop()
 
-genai.configure(api_key=api_key)
+# Initialize the NEW Client (v1.0 SDK)
+client = genai.Client(api_key=api_key)
 
-# Initialize Session State
+# Session State
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I am your AI Counselor for International Studies. I can check live university data for you. Try asking about tuition fees, deadlines, or scholarships!"}
+        {"role": "assistant", "content": "Hello! I'm running on the new Google GenAI SDK. Ask me about universities, fees, or deadlines!"}
     ]
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = [
-        "Tuition fees for MS CS at TU Munich",
-        "Scholarships for Indian students in UK",
-        "Top 5 universities for Data Science in USA"
-    ]
+    st.session_state.suggestions = ["Tuition for MS CS in Germany", "Scholarships for Indians in UK", "Best ROI universities in USA"]
 
-# --- 2. CORE FUNCTIONS ---
+# --- 2. CORE LOGIC (NEW SDK SYNTAX) ---
 
 def get_gemini_response(user_query):
     """
-    1. Performs Grounded Generation (Search)
-    2. Validates data
-    3. Generates 3 relevant follow-up questions
+    Uses the new google-genai SDK to perform Grounded Search + JSON extraction
     """
-    
-    # Model A: The Researcher + Logic Engine
-    # We ask it to return JSON to easily separate the "Answer" from the "Suggestions"
-    model = genai.GenerativeModel(
-        model_name='gemini-2.5-flash',  
-        tools='google_search_retrieval',
-        system_instruction="""
-        You are an expert Overseas Education Counselor for Indian Students.
-        1. SEARCH: Always use Google Search to find the latest 2024/2025 data.
-        2. VALIDATE: If data is ambiguous, state that clearly.
-        3. FORMAT: Output your response in valid JSON format with two keys:
-           - "answer": The markdown formatted answer to the user.
-           - "next_questions": A list of 3 short, relevant follow-up questions the user might want to ask next.
-        """
-    )
-    
     try:
-        response = model.generate_content(
-            f"User Query: {user_query}. \nProvide detailed specific info (fees in INR/USD, deadlines)."
+        # Define the Search Tool (New Syntax)
+        google_search_tool = types.Tool(
+            google_search=types.GoogleSearch() 
         )
-        
-        # Parse the JSON response
-        # Gemini usually outputs JSON inside ```json ... ``` blocks, we need to clean it
-        text = response.text
-        if "```json" in text:
-            text = text.replace("```json", "").replace("```", "")
-        
-        data = json.loads(text)
-        return data["answer"], data["next_questions"], response.candidates[0].grounding_metadata
-        
-    except Exception as e:
-        # Fallback if JSON parsing fails or API errors
-        return f"I found some info but hit a technical snag: {str(e)}", [], None
 
-# --- 3. THE UI LAYOUT ---
+        # Define the Generation Config (New Syntax)
+        generate_config = types.GenerateContentConfig(
+            temperature=0.3,
+            tools=[google_search_tool],  # Enable Grounding
+            response_mime_type="application/json", # Force JSON output
+            system_instruction="""
+            You are an expert Overseas Education Counselor.
+            1. SEARCH: Use Google Search to find the latest 2025 data.
+            2. FORMAT: Output valid JSON with keys: "answer" (markdown text) and "next_questions" (list of 3 strings).
+            3. VALIDATE: If specific fees/dates are not found, mention that clearly.
+            """
+        )
+
+        # Generate Content
+        # We use 'gemini-2.0-flash' as it is best optimized for the new SDK & Grounding
+        response = client.models.generate_content(
+            model='gemini-2.0-flash', 
+            contents=f"User Query: {user_query}. Provide specific fees in INR/USD and deadlines.",
+            config=generate_config
+        )
+
+        # Parse Response
+        if response.text:
+            data = json.loads(response.text)
+            
+            # Extract Grounding Metadata (Citations)
+            # The new SDK puts metadata in response.candidates[0].grounding_metadata
+            metadata = None
+            if response.candidates and response.candidates[0].grounding_metadata:
+                metadata = response.candidates[0].grounding_metadata
+                
+            return data.get("answer", "No answer found."), data.get("next_questions", []), metadata
+        else:
+            return "No response generated.", [], None
+
+    except Exception as e:
+        return f"⚠️ SDK Error: {str(e)}", [], None
+
+# --- 3. UI LAYOUT ---
 
 st.title("🎓 UniGuide AI")
-st.caption("Live Research • Validated Data • Interactive Suggestions")
+st.caption("Powered by Google Gen AI SDK v1.0 • Gemini 2.0 Flash")
 
 # Display Chat History
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# --- 4. CLICKABLE SUGGESTIONS LOGIC ---
-# We display suggestions above the input box. 
-# If a user clicks one, we treat it exactly like a typed input.
-
+# Suggestion Chips
 selected_suggestion = None
-
 if st.session_state.suggestions:
-    st.write("Compare or Explore:")
+    st.write("Explore:")
     cols = st.columns(len(st.session_state.suggestions))
     for i, suggestion in enumerate(st.session_state.suggestions):
         if cols[i].button(suggestion, key=f"sugg_{i}"):
             selected_suggestion = suggestion
 
-# --- 5. MAIN INTERACTION LOOP ---
-
-# Check if input came from a Button click OR the Chat Input box
+# Input Handling
 user_input = st.chat_input("Ask a question...")
-if selected_suggestion:
-    user_input = selected_suggestion
+if selected_suggestion: user_input = selected_suggestion
 
 if user_input:
-    # 1. Append User Message
     st.session_state.messages.append({"role": "user", "content": user_input})
-    # Force a rerun to show the user message immediately before processing
     st.rerun()
 
-# Processing (This runs after the rerun triggers)
+# Response Generation
 if st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant"):
-        with st.status("🔍 Researching Global Databases...", expanded=True) as status:
-            st.write("Connecting to Google Search Index...")
-            last_query = st.session_state.messages[-1]["content"]
+        with st.status("🔍 Searching global databases (Gemini 2.0)...", expanded=True) as status:
             
-            # CALL THE API
-            answer, new_suggestions, metadata = get_gemini_response(last_query)
+            answer, new_suggestions, metadata = get_gemini_response(st.session_state.messages[-1]["content"])
             
-            st.write("Verifying Sources...")
-            time.sleep(0.5) # UX polish
             status.update(label="Research Complete", state="complete", expanded=False)
             
-        # Display Answer
         st.markdown(answer)
         
-        # Display Sources (if available)
+        # New SDK Grounding Metadata Display
         if metadata and metadata.search_entry_point:
-             st.caption(f"ℹ️ content grounded in Google Search results")
+            st.caption(f"ℹ️ Verified with Google Search Grounding")
+            # You can extract specific links from metadata.grounding_chunks if needed
 
-    # Update State
     st.session_state.messages.append({"role": "assistant", "content": answer})
-    st.session_state.suggestions = new_suggestions # Update the chips for next turn
-    st.rerun() # Rerun to display the NEW suggestions at the bottom
+    st.session_state.suggestions = new_suggestions
+    st.rerun()
