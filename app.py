@@ -69,7 +69,7 @@ def get_gemini_response(user_query):
         )
 
         response = client.models.generate_content(
-            model='gemini-2.0-flash', 
+            model='gemini-2.5-flash', 
             contents=f"User Query: {user_query}. Provide specific fees in INR/USD and deadlines.",
             config=generate_config
         )
