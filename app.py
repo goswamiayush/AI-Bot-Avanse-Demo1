@@ -2,131 +2,131 @@ import streamlit as st
 from google import genai
 from google.genai import types
 import json
-import time
 
 # --- 1. CONFIGURATION ---
-st.set_page_config(page_title="UniGuide AI (v2.0)", page_icon="🎓", layout="centered")
+st.set_page_config(page_title="UniGuide AI", page_icon="🎓")
 
-# Custom CSS for the "Beautiful" UI
 st.markdown("""
 <style>
     .stChatMessage {border-radius: 15px; padding: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
-    .stButton button {border-radius: 20px; background-color: #F8F9FA; border: 1px solid #E0E0E0;}
-    .stButton button:hover {border-color: #6C63FF; color: #6C63FF;}
+    .stButton button {border-radius: 20px; background-color: #F8F9FA;}
 </style>
 """, unsafe_allow_html=True)
 
-# API Setup
+# --- 2. SETUP NEW GEMINI CLIENT ---
 try:
+    # Gets API Key from Streamlit Secrets
     api_key = st.secrets["GEMINI_API_KEY"]
-except:
-    st.error("⚠️ API Key missing. Please set GEMINI_API_KEY in Streamlit secrets.")
+    
+    # NEW SDK INITIALIZATION
+    client = genai.Client(api_key=api_key)
+    
+except Exception as e:
+    st.error(f"⚠️ API Key missing. Set GEMINI_API_KEY in secrets.")
     st.stop()
-
-# Initialize the NEW Client (v1.0 SDK)
-client = genai.Client(api_key=api_key)
 
 # Session State
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I'm running on the new Google GenAI SDK. Ask me about universities, fees, or deadlines!"}
-    ]
+    st.session_state.messages = [{"role": "assistant", "content": "Hello! I am your AI Counselor. Ask me about universities, fees, or deadlines."}]
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = ["Tuition for MS CS in Germany", "Scholarships for Indians in UK", "Best ROI universities in USA"]
+    st.session_state.suggestions = ["Tuition for MS CS at TU Munich", "Scholarships for Indians in UK", "USA vs Germany for Data Science"]
 
-# --- 2. CORE LOGIC (NEW SDK SYNTAX) ---
-
+# --- 3. THE CORE FUNCTION (NEW SDK) ---
 def get_gemini_response(user_query):
     """
-    Uses the new google-genai SDK to perform Grounded Search + JSON extraction
+    Uses the new google-genai SDK to Search + Validate + Format in one go.
     """
+    
+    # We define the strict structure we want the AI to return.
+    # This replaces the need for complex parsing logic.
+    response_schema = {
+        "type": "OBJECT",
+        "properties": {
+            "answer": {"type": "STRING", "description": "The detailed answer with fees, dates, and requirements."},
+            "validation_status": {"type": "STRING", "description": "Either 'VERIFIED' if official data found, or 'UNCERTAIN' if data is vague."},
+            "next_questions": {
+                "type": "ARRAY",
+                "items": {"type": "STRING"},
+                "description": "3 relevant follow-up questions."
+            }
+        },
+        "required": ["answer", "validation_status", "next_questions"]
+    }
+
     try:
-        # Define the Search Tool (New Syntax)
-        google_search_tool = types.Tool(
-            google_search=types.GoogleSearch() 
-        )
-
-        # Define the Generation Config (New Syntax)
-        generate_config = types.GenerateContentConfig(
-            temperature=0.3,
-            tools=[google_search_tool],  # Enable Grounding
-            response_mime_type="application/json", # Force JSON output
-            system_instruction="""
-            You are an expert Overseas Education Counselor.
-            1. SEARCH: Use Google Search to find the latest 2025 data.
-            2. FORMAT: Output valid JSON with keys: "answer" (markdown text) and "next_questions" (list of 3 strings).
-            3. VALIDATE: If specific fees/dates are not found, mention that clearly.
-            """
-        )
-
-        # Generate Content
-        # We use 'gemini-2.0-flash' as it is best optimized for the new SDK & Grounding
+        # CALLING THE NEW API
         response = client.models.generate_content(
-            model='gemini-2.5-flash', 
-            contents=f"User Query: {user_query}. Provide specific fees in INR/USD and deadlines.",
-            config=generate_config
-        )
-
-        # Parse Response
-        if response.text:
-            data = json.loads(response.text)
-            
-            # Extract Grounding Metadata (Citations)
-            # The new SDK puts metadata in response.candidates[0].grounding_metadata
-            metadata = None
-            if response.candidates and response.candidates[0].grounding_metadata:
-                metadata = response.candidates[0].grounding_metadata
+            model='gemini-2.5-flash', # Use 1.5-flash for Free Tier (2.0 is paid/preview)
+            contents=f"User Question: {user_query}",
+            config=types.GenerateContentConfig(
+                # Enable Google Search (Grounding)
+                tools=[types.Tool(google_search=types.GoogleSearch())],
                 
-            return data.get("answer", "No answer found."), data.get("next_questions", []), metadata
-        else:
-            return "No response generated.", [], None
+                # Force JSON Output
+                response_mime_type="application/json",
+                response_schema=response_schema,
+                
+                # Validation Logic in System Prompt
+                system_instruction="""
+                You are a strict Overseas Education Counselor.
+                1. RESEARCH: You must use the Google Search tool to find 2024/2025 data.
+                2. VERIFY: If you cannot find specific numbers (fees, dates) on official university/gov sites, mark validation_status as 'UNCERTAIN'.
+                3. ANSWER: Be concise but specific. Convert currencies to INR/USD.
+                """
+            )
+        )
+        
+        # The new SDK returns a Python object directly if schema is used, 
+        # but sometimes raw text JSON. We handle both.
+        try:
+            data = json.loads(response.text)
+        except:
+            data = response.parsed
+
+        # Extract Grounding Metadata (Sources)
+        sources = []
+        if response.candidates[0].grounding_metadata.search_entry_point:
+            # We just flag that sources exist; extracting raw HTML links is complex in the new object
+            sources = ["Google Search Index"]
+
+        return data, sources
 
     except Exception as e:
-        return f"⚠️ SDK Error: {str(e)}", [], None
+        return {"answer": f"⚠️ Tech Error: {str(e)}", "next_questions": [], "validation_status": "ERROR"}, []
 
-# --- 3. UI LAYOUT ---
+# --- 4. UI LOGIC (Same as before) ---
+st.title("🎓 UniGuide AI (New SDK)")
 
-st.title("🎓 UniGuide AI")
-st.caption("Powered by Google Gen AI SDK v1.0 • Gemini 2.0 Flash")
-
-# Display Chat History
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# Suggestion Chips
-selected_suggestion = None
+# Clickable Suggestions
 if st.session_state.suggestions:
-    st.write("Explore:")
     cols = st.columns(len(st.session_state.suggestions))
     for i, suggestion in enumerate(st.session_state.suggestions):
         if cols[i].button(suggestion, key=f"sugg_{i}"):
-            selected_suggestion = suggestion
+            st.session_state.current_input = suggestion
 
 # Input Handling
 user_input = st.chat_input("Ask a question...")
-if selected_suggestion: user_input = selected_suggestion
+if "current_input" in st.session_state:
+    user_input = st.session_state.current_input
+    del st.session_state.current_input
 
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    st.rerun()
+    with st.chat_message("user"):
+        st.markdown(user_input)
 
-# Response Generation
-if st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant"):
-        with st.status("🔍 Searching global databases (Gemini 2.0)...", expanded=True) as status:
+        with st.status("🔍 Searching & Validating...", expanded=True):
+            data, sources = get_gemini_response(user_input)
             
-            answer, new_suggestions, metadata = get_gemini_response(st.session_state.messages[-1]["content"])
+        # UI: Show Validation Badge
+        if data.get("validation_status") == "VERIFIED":
+            st.success("✅ Data Verified against Search Results")
+        elif data.get("validation_status") == "UNCERTAIN":
+            st.warning("⚠️ Data Ambiguous - Check Official Links")
             
-            status.update(label="Research Complete", state="complete", expanded=False)
-            
-        st.markdown(answer)
+        st.markdown(data.get("answer"))
         
-        # New SDK Grounding Metadata Display
-        if metadata and metadata.search_entry_point:
-            st.caption(f"ℹ️ Verified with Google Search Grounding")
-            # You can extract specific links from metadata.grounding_chunks if needed
-
-    st.session_state.messages.append({"role": "assistant", "content": answer})
-    st.session_state.suggestions = new_suggestions
-    st.rerun()
+        st.session_state.messages.append({"role": "assistant", "content": data.get("answer")})
+        st.session_state.suggestions = data.get("next_questions", [])
+        st.rerun()
