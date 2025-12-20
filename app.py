@@ -293,7 +293,7 @@ def get_gemini_response(query, history):
         """
 
         response = client.models.generate_content(
-            model='gemini-2.0-flash', # Or gemini-1.5-pro based on availability
+            model='gemini-2.5-flash', # Or gemini-1.5-pro based on availability
             contents=query,
             config=types.GenerateContentConfig(
                 temperature=0.3,
