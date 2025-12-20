@@ -85,24 +85,59 @@ except:
     st.error("⚠️ API Key missing in Streamlit Secrets.")
     st.stop()
 
+# --- REPLACEMENT FUNCTION ---
+
+def clean_json_text(text):
+    """Removes markdown code blocks (e.g. ```json ... ```) to extract raw JSON string."""
+    # Remove code block markers
+    text = re.sub(r'```json\s*', '', text)
+    text = re.sub(r'```\s*', '', text)
+    return text.strip()
+
 def get_ai_response(query, history):
     system_prompt = """
     You are an Expert Education Counselor for Avanse.
-    Output JSON ONLY:
-    { "answer": "Markdown text", "trigger_lead_gen": false, "next_questions": ["Q1","Q2"], "videos": [] }
+    
+    INSTRUCTIONS:
+    1. Search Google for the latest 2024/2025 data if needed.
+    2. Output your response purely as a JSON object. Do not add conversational filler outside the JSON.
+    
+    JSON SCHEMA:
+    { 
+        "answer": "Your formatted answer here (use Markdown for bold/lists).", 
+        "trigger_lead_gen": false, 
+        "next_questions": ["Short Question 1", "Short Question 2"], 
+        "videos": ["YouTube URL"] 
+    }
     """
+    
     try:
+        # call the API without strict JSON enforcement
         response = client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model='gemini-2.0-flash',
             contents=f"History: {history}\nUser Query: {query}",
             config=types.GenerateContentConfig(
                 temperature=0.3,
-                tools=[types.Tool(google_search=types.GoogleSearch())],
+                tools=[types.Tool(google_search=types.GoogleSearch())], # Tool kept
                 system_instruction=system_prompt,
-                response_mime_type="application/json"
+                # response_mime_type="application/json"  <-- REMOVED THIS LINE
             )
         )
-        return json.loads(response.text)
+        
+        # Manually clean and parse the text
+        raw_text = response.text
+        cleaned_text = clean_json_text(raw_text)
+        
+        return json.loads(cleaned_text)
+        
+    except json.JSONDecodeError:
+        # Fallback if the model returns plain text instead of JSON
+        return {
+            "answer": response.text, 
+            "trigger_lead_gen": False, 
+            "next_questions": ["Tell me about loans", "Visa process"],
+            "videos": []
+        }
     except Exception as e:
         return {"answer": f"I encountered a connection error. ({str(e)})", "trigger_lead_gen": False}
 
