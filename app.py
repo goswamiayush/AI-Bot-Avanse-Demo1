@@ -4,7 +4,7 @@ from google.genai import types
 import json
 import re
 
-# --- 1. APP CONFIGURATION ---
+# --- 1. CONFIGURATION ---
 st.set_page_config(
     page_title="Avanse AI Labs",
     page_icon="🧬",
@@ -12,10 +12,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. ADVANCED CSS (FIXED SELECTORS) ---
+# --- 2. THE "NUCLEAR" CSS FIX ---
 st.markdown("""
 <style>
-    /* GLOBAL FONTS */
+    /* GLOBAL RESET */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
     .stApp {
@@ -27,119 +27,111 @@ st.markdown("""
     #MainMenu, footer, header {visibility: hidden;}
     div[data-testid="stToolbar"] {visibility: hidden;}
     
-    /* LAYOUT PADDING (Fixes Input Overlap) */
+    /* INPUT BOX FIX (Prevent Overlap) */
     .block-container {
         padding-top: 6rem !important;
-        padding-bottom: 10rem !important; /* Increased space for bottom input */
+        padding-bottom: 15rem !important; /* Huge padding to ensure input never covers text */
         max-width: 750px;
     }
 
-    /* --- CHAT BUBBLES (UPDATED SELECTORS) --- */
+    /* --- CHAT BUBBLES: AGGRESSIVE OVERRIDE --- */
     
-    /* 1. Reset Container */
-    .stChatMessage {
+    /* 1. Reset the outer container */
+    [data-testid="stChatMessage"] {
         background-color: transparent !important;
         border: none !important;
+        padding: 0 !important;
+        margin-bottom: 1.5rem !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
-    /* 2. USER BUBBLE (Blue/Right) */
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) {
-        flex-direction: row-reverse;
-        justify-content: flex-end;
+    /* 2. Hide Default Avatars */
+    [data-testid="chatAvatarIcon-user"], [data-testid="chatAvatarIcon-assistant"] {
+        display: none !important;
     }
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) div[data-testid="stMarkdownContainer"] {
+
+    /* 3. USER BUBBLE (Blue/Right) - USING :HAS SELECTOR */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+        align-items: flex-end !important; /* Force Right Align */
+    }
+    
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) [data-testid="stMarkdownContainer"] {
         background-color: #007AFF !important;
-        color: white !important;
-        padding: 12px 18px;
-        border-radius: 20px 20px 4px 20px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        max-width: 80%;
-        text-align: left;
-        margin-left: auto;
+        color: #ffffff !important;
+        padding: 12px 18px !important;
+        border-radius: 20px 20px 4px 20px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+        max-width: 80% !important;
+        text-align: left !important;
     }
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) p {
-        color: white !important;
+    
+    /* Force Text Color White */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) p,
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) li {
+        color: #ffffff !important;
     }
 
-    /* 3. ASSISTANT BUBBLE (White/Left) */
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-assistant"]) div[data-testid="stMarkdownContainer"] {
+    /* 4. ASSISTANT BUBBLE (White/Left) */
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
+        align-items: flex-start !important; /* Force Left Align */
+    }
+    
+    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) [data-testid="stMarkdownContainer"] {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        padding: 14px 20px;
-        border-radius: 20px 20px 20px 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        max-width: 90%;
+        padding: 14px 20px !important;
+        border-radius: 20px 20px 20px 4px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+        max-width: 90% !important;
+        border: 1px solid rgba(0,0,0,0.05) !important;
     }
 
-    /* --- SOURCE CARDS (Grid Layout) --- */
-    .source-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid rgba(0,0,0,0.05);
-    }
-    .source-card {
+    /* --- SOURCE CARDS (Simple & Safe) --- */
+    .source-box {
+        display: inline-flex;
+        align-items: center;
         background: #F9F9F9;
         border: 1px solid #E5E5EA;
         border-radius: 8px;
         padding: 6px 10px;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 5px;
+        margin: 4px;
+        text-decoration: none !important;
+        color: #333 !important;
+        font-size: 11px;
         transition: all 0.2s;
-        max-width: 48%; /* 2 per row approx */
     }
-    .source-card:hover {
+    .source-box:hover {
         background: #EBF3FF;
         border-color: #007AFF;
     }
-    .source-text {
-        font-size: 11px;
-        color: #333;
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+    .source-icon { margin-right: 5px; }
 
-    /* --- VIDEO HIDDEN CONTAINER --- */
-    /* If video fails, we want it invisible */
-    .stVideo {
-        margin-top: 10px;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    /* --- SUGGESTIONS (Floating) --- */
+    /* --- SUGGESTION PILLS --- */
     .suggestion-container {
         position: fixed;
         bottom: 5rem;
         left: 0;
         width: 100%;
-        background: linear-gradient(to top, #F2F2F7 90%, transparent 100%);
-        padding: 10px 0;
-        z-index: 99;
+        background: linear-gradient(to top, #F2F2F7 80%, transparent 100%);
+        padding: 15px 0;
+        z-index: 9999;
         display: flex;
         justify-content: center;
         gap: 8px;
     }
     .stButton button {
-        border-radius: 20px;
-        border: 1px solid #C7C7CC;
-        background-color: white;
-        color: #007AFF;
-        font-size: 12px;
-        font-weight: 500;
-        padding: 6px 14px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border-radius: 20px !important;
+        border: 1px solid #C7C7CC !important;
+        background-color: white !important;
+        color: #007AFF !important;
+        font-size: 12px !important;
+        padding: 8px 16px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
     }
     .stButton button:hover {
-        background-color: #007AFF;
-        color: white;
-        border-color: #007AFF;
+        background-color: #007AFF !important;
+        color: white !important;
     }
 
 </style>
@@ -147,9 +139,11 @@ st.markdown("""
 
 # --- 3. HEADER ---
 st.markdown("""
-<div style="position:fixed; top:0; left:0; width:100%; background:rgba(255,255,255,0.95); padding:15px; border-bottom:1px solid #ddd; z-index:1000; text-align:center; backdrop-filter:blur(10px);">
-    <span style="font-size:18px; font-weight:800; color:#003366;">AVANSE AI LABS</span>
-    <span style="background:#FFD700; color:#003366; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:5px;">BETA</span>
+<div style="position:fixed; top:0; left:0; width:100%; background:rgba(255,255,255,0.95); padding:1rem; border-bottom:1px solid #E5E5EA; z-index:10000; text-align:center; backdrop-filter:blur(10px);">
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span style="font-size:18px; font-weight:800; color:#003366;">AVANSE AI LABS</span>
+        <span style="background:#FFD700; color:#003366; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px;">BETA</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -163,18 +157,17 @@ except:
 client = genai.Client(api_key=api_key)
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! I'm your Avanse Education Expert."}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hello! I am your **Avanse Education Expert**."}]
 if "suggestions" not in st.session_state:
     st.session_state.suggestions = ["Visa Acceptance USA", "Tuition Fees Germany", "Scholarships"]
 
-# --- 5. LOGIC (Safe Parsing) ---
+# --- 5. LOGIC ENGINE ---
 def clean_text(text):
     text = re.sub(r'```json.*?```', '', text, flags=re.DOTALL)
     text = re.sub(r'Next Steps:.*', '', text, flags=re.IGNORECASE | re.DOTALL)
     return text.strip()
 
 def validate_video(url):
-    # Strict YouTube Filter
     if not url: return False
     return "youtube.com" in url or "youtu.be" in url
 
@@ -204,7 +197,6 @@ def extract_data(response):
     
     next_q = data.get("next_questions", [])
     if not next_q:
-        # Fallback question finder
         next_q = re.findall(r'[1-9]\.\s*(.*?)\?', text)[:3]
 
     raw_vids = data.get("videos", [])
@@ -235,32 +227,27 @@ def get_gemini_response(query, history):
         )
         return extract_data(response)
     except:
-        return "Sorry, I couldn't connect.", [], [], []
+        return "Connection Error.", [], [], []
 
-# --- 6. RENDER LOGIC ---
+# --- 6. RENDER LOGIC (SAFE HTML) ---
 def render_message(msg):
     with st.chat_message(msg["role"]):
         st.markdown(clean_text(msg["content"]))
         
-        # Sources (Safe Render)
+        # Sources (Safe Render Construction)
         if msg.get("sources"):
-            # We build the HTML string carefully to avoid the raw code bug
-            html_parts = ['<div class="source-grid">']
+            # Construct HTML as a single clean string without line breaks causing issues
+            html_content = '<div style="margin-top:10px; display:flex; flex-wrap:wrap;">'
             for s in msg["sources"][:3]:
                 title = s["title"][:25] + ".."
-                # Safe F-String
-                html_parts.append(f"""
-                    <a href="{s['url']}" target="_blank" class="source-card">
-                        <span style="font-size:12px;">🔗</span>
-                        <span class="source-text">{title}</span>
-                    </a>
-                """)
-            html_parts.append('</div>')
-            st.markdown("".join(html_parts), unsafe_allow_html=True)
+                url = s["url"]
+                # Use single quotes for HTML attributes to avoid f-string conflicts
+                html_content += f'<a href="{url}" target="_blank" class="source-box"><span class="source-icon">🔗</span>{title}</a>'
+            html_content += '</div>'
+            st.markdown(html_content, unsafe_allow_html=True)
 
         # Videos
         if msg.get("videos"):
-            # Only show if list is not empty
             st.markdown("**Watch Related:**")
             cols = st.columns(len(msg["videos"]))
             for i, v in enumerate(msg["videos"]):
@@ -273,11 +260,14 @@ for msg in st.session_state.messages:
 # Suggestions
 st.markdown('<div class="suggestion-container">', unsafe_allow_html=True)
 if st.session_state.suggestions:
-    cols = st.columns(len(st.session_state.suggestions))
-    for i, s in enumerate(st.session_state.suggestions):
-        if cols[i].button(s, key=f"btn_{len(st.session_state.messages)}_{i}"):
-            st.session_state.messages.append({"role": "user", "content": s})
-            st.rerun()
+    # Safely handle column creation
+    count = len(st.session_state.suggestions)
+    if count > 0:
+        cols = st.columns(count)
+        for i, s in enumerate(st.session_state.suggestions):
+            if cols[i].button(s, key=f"btn_{len(st.session_state.messages)}_{i}"):
+                st.session_state.messages.append({"role": "user", "content": s})
+                st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Input
