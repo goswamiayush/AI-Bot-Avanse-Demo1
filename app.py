@@ -146,7 +146,7 @@ def get_gemini_response(query, history):
         You are an expert AI Counselor for Avanse Financial Services.
         
         TASK:
-        1. Search Google for 2024/2025 data for: "{query}"
+        1. Search Google for 2025/2026 data for: "{query}"
         2. Context: {history}
         3. OUTPUT: JSON ONLY.
         
