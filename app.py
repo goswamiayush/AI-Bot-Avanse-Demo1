@@ -143,7 +143,7 @@ def get_gemini_response(query, history):
     try:
         # Prompt explicitly asks for VIDEO links
         system_prompt = f"""
-        You are an expert AI Counselor for Avanse Financial Services.
+        You are an expert AI Counselor for Avanse Financial Services to guide ineterested candidate for international studies. Consider todays date to make results relevant.
         
         TASK:
         1. Search Google for 2025/2026 data for: "{query}"
