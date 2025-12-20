@@ -12,156 +12,144 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. ADVANCED CSS (THE "IMESSAGE" OVERHAUL) ---
+# --- 2. ADVANCED CSS (FIXED SELECTORS) ---
 st.markdown("""
 <style>
-    /* --- GLOBAL SETTINGS --- */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    /* GLOBAL FONTS */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
     .stApp {
-        background-color: #F2F2F7; /* iOS System Grey Background */
-        font-family: 'Inter', -apple-system, sans-serif;
+        background-color: #F2F2F7;
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Hide Streamlit Clutter */
+    /* HIDE DEFAULT ELEMENTS */
     #MainMenu, footer, header {visibility: hidden;}
     div[data-testid="stToolbar"] {visibility: hidden;}
     
-    /* Fix Padding for Fixed Elements */
+    /* LAYOUT PADDING (Fixes Input Overlap) */
     .block-container {
         padding-top: 6rem !important;
-        padding-bottom: 12rem !important;
+        padding-bottom: 10rem !important; /* Increased space for bottom input */
         max-width: 750px;
     }
 
-    /* --- CUSTOM HEADER (VIBRANT) --- */
-    .nav-header {
-        position: fixed; top: 0; left: 0; width: 100%;
-        background: rgba(255, 255, 255, 0.90);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(0,0,0,0.1);
-        z-index: 9999;
-        padding: 1rem 0;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
-    .logo-container {
-        display: flex; align-items: center; gap: 8px;
-    }
-    .logo-text {
-        color: #003366; /* Avanse Navy */
-        font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px;
-    }
-    .beta-tag {
-        background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); /* Gold Gradient */
-        color: #003366; font-size: 0.65rem; font-weight: 700;
-        padding: 3px 8px; border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .header-sub {
-        font-size: 0.75rem; color: #8E8E93; margin-top: 2px; font-weight: 500;
-    }
-
-    /* --- CHAT BUBBLES (TRUE SEPARATION) --- */
+    /* --- CHAT BUBBLES (UPDATED SELECTORS) --- */
     
-    /* Reset Streamlit defaults */
-    .stChatMessage { background-color: transparent !important; border: none !important; padding: 0 !important; margin-bottom: 1.5rem; }
-    div[data-testid="chatAvatarIcon-user"], div[data-testid="chatAvatarIcon-assistant"] { display: none !important; }
+    /* 1. Reset Container */
+    .stChatMessage {
+        background-color: transparent !important;
+        border: none !important;
+    }
 
-    /* USER BUBBLE (Right / Blue) */
+    /* 2. USER BUBBLE (Blue/Right) */
     div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) {
         flex-direction: row-reverse;
+        justify-content: flex-end;
     }
     div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) div[data-testid="stMarkdownContainer"] {
-        background: linear-gradient(135deg, #007AFF 0%, #005ecb 100%); /* iOS Blue */
-        color: white;
+        background-color: #007AFF !important;
+        color: white !important;
         padding: 12px 18px;
-        border-radius: 20px 20px 4px 20px; /* Sharp bottom-right */
-        box-shadow: 0 4px 6px rgba(0, 122, 255, 0.2);
+        border-radius: 20px 20px 4px 20px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         max-width: 80%;
-        margin-left: auto;
         text-align: left;
+        margin-left: auto;
     }
-    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) p { color: white !important; }
+    div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-user"]) p {
+        color: white !important;
+    }
 
-    /* ASSISTANT BUBBLE (Left / White) */
+    /* 3. ASSISTANT BUBBLE (White/Left) */
     div[data-testid="stChatMessage"]:has(div[data-testid="chatAvatarIcon-assistant"]) div[data-testid="stMarkdownContainer"] {
-        background-color: #FFFFFF;
-        color: #1C1C1E;
-        padding: 16px 22px;
-        border-radius: 20px 20px 20px 4px; /* Sharp bottom-left */
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        padding: 14px 20px;
+        border-radius: 20px 20px 20px 4px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        border: 1px solid rgba(0,0,0,0.05);
         max-width: 90%;
-        margin-right: auto;
     }
 
-    /* --- RICH SOURCE CARDS --- */
+    /* --- SOURCE CARDS (Grid Layout) --- */
     .source-grid {
-        display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px;
-        border-top: 1px solid #F2F2F7;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(0,0,0,0.05);
     }
     .source-card {
-        display: flex; align-items: center; gap: 6px;
-        background: #F9F9F9; border: 1px solid #E5E5EA;
-        border-radius: 8px; padding: 6px 10px;
-        text-decoration: none; transition: all 0.2s;
-        max-width: 100%;
+        background: #F9F9F9;
+        border: 1px solid #E5E5EA;
+        border-radius: 8px;
+        padding: 6px 10px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+        max-width: 48%; /* 2 per row approx */
     }
     .source-card:hover {
-        background: #F0F5FF; border-color: #007AFF; transform: translateY(-1px);
+        background: #EBF3FF;
+        border-color: #007AFF;
     }
-    .source-icon { font-size: 14px; }
     .source-text {
-        font-size: 0.75rem; color: #333; font-weight: 500;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;
+        font-size: 11px;
+        color: #333;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    /* --- SUGGESTIONS (FLOATING PILLS) --- */
+    /* --- VIDEO HIDDEN CONTAINER --- */
+    /* If video fails, we want it invisible */
+    .stVideo {
+        margin-top: 10px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* --- SUGGESTIONS (Floating) --- */
     .suggestion-container {
-        position: fixed; bottom: 5rem; left: 0; width: 100%;
-        background: linear-gradient(to top, #F2F2F7 80%, transparent 100%);
-        padding: 15px 0; z-index: 100;
-        display: flex; justify-content: center; gap: 10px;
-        overflow-x: auto;
+        position: fixed;
+        bottom: 5rem;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(to top, #F2F2F7 90%, transparent 100%);
+        padding: 10px 0;
+        z-index: 99;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
     }
     .stButton button {
-        background-color: #FFFFFF;
-        border: 1px solid #D1D1D6;
         border-radius: 20px;
-        color: #003366;
-        font-weight: 600;
-        font-size: 0.85rem;
-        padding: 0.5rem 1.2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        transition: all 0.2s ease;
+        border: 1px solid #C7C7CC;
+        background-color: white;
+        color: #007AFF;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .stButton button:hover {
-        background-color: #003366;
+        background-color: #007AFF;
         color: white;
-        border-color: #003366;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+        border-color: #007AFF;
     }
-    
-    /* --- VIDEO SECTION --- */
-    .video-section-title {
-        font-size: 0.75rem; font-weight: 700; color: #8E8E93;
-        text-transform: uppercase; margin: 15px 0 8px 0; letter-spacing: 0.5px;
-    }
-    .stVideo { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. HEADER HTML ---
+# --- 3. HEADER ---
 st.markdown("""
-<div class="nav-header">
-    <div class="logo-container">
-        <span class="logo-text">AVANSE AI LABS</span>
-        <span class="beta-tag">BETA</span>
-    </div>
-    <div class="header-sub">International Education Assistant</div>
+<div style="position:fixed; top:0; left:0; width:100%; background:rgba(255,255,255,0.95); padding:15px; border-bottom:1px solid #ddd; z-index:1000; text-align:center; backdrop-filter:blur(10px);">
+    <span style="font-size:18px; font-weight:800; color:#003366;">AVANSE AI LABS</span>
+    <span style="background:#FFD700; color:#003366; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:5px;">BETA</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -174,40 +162,27 @@ except:
 
 client = genai.Client(api_key=api_key)
 
-# --- 5. STATE ---
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Welcome! I'm your **Avanse Education Expert**. \n\nI can help you with **Visa Acceptance Rates**, **University Rankings**, or **Education Loans**. How can I assist you today?"}
-    ]
+    st.session_state.messages = [{"role": "assistant", "content": "Hello! I'm your Avanse Education Expert."}]
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = ["🇺🇸 Visa Chances for USA", "🇩🇪 Cost of MS in Germany", "💰 Education Loan Eligibility"]
+    st.session_state.suggestions = ["Visa Acceptance USA", "Tuition Fees Germany", "Scholarships"]
 
-# --- 6. INTELLIGENCE LAYER (With Validation) ---
+# --- 5. LOGIC (Safe Parsing) ---
 def clean_text(text):
     text = re.sub(r'```json.*?```', '', text, flags=re.DOTALL)
     text = re.sub(r'Next Steps:.*', '', text, flags=re.IGNORECASE | re.DOTALL)
     return text.strip()
 
-def validate_video_url(url):
-    """
-    Strictly checks if a URL is a valid, embeddable YouTube link.
-    Prevents the 'Video Unavailable' black box.
-    """
+def validate_video(url):
+    # Strict YouTube Filter
     if not url: return False
-    # Regex for standard YouTube watch URLs or short URLs
-    youtube_regex = (
-        r'(https?://)?(www\.)?'
-        r'(youtube|youtu|youtube-nocookie)\.(com|be)/'
-        r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
-    )
-    match = re.match(youtube_regex, url)
-    return bool(match)
+    return "youtube.com" in url or "youtu.be" in url
 
 def extract_data(response):
     text = response.text if response.text else ""
     sources = []
     
-    # 1. Grounding Sources
+    # Grounding
     if response.candidates and response.candidates[0].grounding_metadata:
         md = response.candidates[0].grounding_metadata
         if md.grounding_chunks:
@@ -215,7 +190,7 @@ def extract_data(response):
                 if chunk.web:
                     sources.append({"title": chunk.web.title, "url": chunk.web.uri})
 
-    # 2. Extract JSON
+    # JSON Parse
     data = {}
     json_match = re.search(r'(\{.*\})', text, re.DOTALL)
     if json_match:
@@ -225,46 +200,28 @@ def extract_data(response):
             pass 
 
     answer = data.get("answer")
-    next_questions = data.get("next_questions", [])
-    raw_videos = data.get("videos", [])
+    if not answer: answer = clean_text(text)
     
-    # 3. VIDEO VALIDATION FILTER
-    # Only keep videos that pass the regex check
-    valid_videos = []
-    for v in raw_videos:
-        if validate_video_url(v):
-            valid_videos.append(v)
+    next_q = data.get("next_questions", [])
+    if not next_q:
+        # Fallback question finder
+        next_q = re.findall(r'[1-9]\.\s*(.*?)\?', text)[:3]
 
-    # 4. Fallback: If JSON failed, parse text manually
-    if not answer:
-        answer = clean_text(text)
-    
-    if not next_questions:
-        # Simple extraction for bullet points looking like questions
-        potential_qs = re.findall(r'[1-9\-•]\.?\s*(What|How|Can|Which|Is).*?\?', text)
-        if potential_qs:
-            next_questions = potential_qs[:3]
+    raw_vids = data.get("videos", [])
+    valid_vids = [v for v in raw_vids if validate_video(v)]
 
-    return answer, next_questions, sources, valid_videos
-
-def format_history(messages):
-    return "\n".join([f"{m['role']}: {m['content']}" for m in messages[-4:]])
+    return answer, next_q, sources, valid_vids
 
 def get_gemini_response(query, history):
     try:
         system_prompt = f"""
-        You are an expert Education Counselor for Avanse Financial Services.
-        
-        TASK:
-        1. Search Google for 2024/2025 data: "{query}"
-        2. Context: {history}
-        3. OUTPUT: JSON ONLY.
-        
-        JSON SCHEMA:
+        You are an Education Counselor.
+        TASK: Search Google for "{query}".
+        OUTPUT: JSON ONLY.
         {{
-            "answer": "Markdown answer. Keep it engaging and concise.",
-            "next_questions": ["Short Q1", "Short Q2", "Short Q3"],
-            "videos": ["https://www.youtube.com/watch?v=..."] (Include 1-2 YouTube links ONLY if they are highly relevant official guides)
+            "answer": "Markdown answer.",
+            "next_questions": ["Q1", "Q2", "Q3"],
+            "videos": ["URL"] (Only if highly relevant)
         }}
         """
         response = client.models.generate_content(
@@ -277,83 +234,65 @@ def get_gemini_response(query, history):
             )
         )
         return extract_data(response)
-    except Exception as e:
-        return f"⚠️ Error: {str(e)}", [], [], []
+    except:
+        return "Sorry, I couldn't connect.", [], [], []
 
-# --- 7. RENDER FUNCTIONS ---
-
+# --- 6. RENDER LOGIC ---
 def render_message(msg):
     with st.chat_message(msg["role"]):
-        # Main Content
-        clean_content = clean_text(msg["content"])
-        st.markdown(clean_content)
+        st.markdown(clean_text(msg["content"]))
         
-        # Sources (Rich Cards)
+        # Sources (Safe Render)
         if msg.get("sources"):
-            source_html = '<div class="source-grid">'
+            # We build the HTML string carefully to avoid the raw code bug
+            html_parts = ['<div class="source-grid">']
             for s in msg["sources"][:3]:
-                # Shorten title
-                title = s["title"][:30] + ".." if len(s["title"]) > 30 else s["title"]
-                source_html += f"""
-                <a href="{s["url"]}" target="_blank" class="source-card">
-                    <span class="source-icon">🔗</span>
-                    <span class="source-text">{title}</span>
-                </a>
-                """
-            source_html += '</div>'
-            st.markdown(source_html, unsafe_allow_html=True)
-            
-        # Videos (Conditional Rendering)
-        # ONLY render if we have VALID videos. If list is empty, nothing shows.
+                title = s["title"][:25] + ".."
+                # Safe F-String
+                html_parts.append(f"""
+                    <a href="{s['url']}" target="_blank" class="source-card">
+                        <span style="font-size:12px;">🔗</span>
+                        <span class="source-text">{title}</span>
+                    </a>
+                """)
+            html_parts.append('</div>')
+            st.markdown("".join(html_parts), unsafe_allow_html=True)
+
+        # Videos
         if msg.get("videos"):
-            st.markdown('<div class="video-section-title">Watch Related</div>', unsafe_allow_html=True)
+            # Only show if list is not empty
+            st.markdown("**Watch Related:**")
             cols = st.columns(len(msg["videos"]))
-            for i, vid_url in enumerate(msg["videos"]):
-                cols[i].video(vid_url)
+            for i, v in enumerate(msg["videos"]):
+                cols[i].video(v)
 
-# --- 8. MAIN UI LOOP ---
-
-# A. Render History
+# --- 7. UI LOOP ---
 for msg in st.session_state.messages:
     render_message(msg)
 
-# B. Suggestions (Floating Pill Area)
+# Suggestions
 st.markdown('<div class="suggestion-container">', unsafe_allow_html=True)
-selected_suggestion = None
-
 if st.session_state.suggestions:
-    # Use columns to ensure horizontal layout logic inside container
-    count = min(len(st.session_state.suggestions), 3)
-    if count > 0:
-        cols = st.columns(count)
-        for i in range(count):
-            if cols[i].button(st.session_state.suggestions[i], key=f"sugg_{len(st.session_state.messages)}_{i}"):
-                selected_suggestion = st.session_state.suggestions[i]
+    cols = st.columns(len(st.session_state.suggestions))
+    for i, s in enumerate(st.session_state.suggestions):
+        if cols[i].button(s, key=f"btn_{len(st.session_state.messages)}_{i}"):
+            st.session_state.messages.append({"role": "user", "content": s})
+            st.rerun()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# C. Input
-user_input = st.chat_input("Ask about universities, loans, or visas...")
-if selected_suggestion: user_input = selected_suggestion
-
-# D. Logic
-if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
+# Input
+if prompt := st.chat_input("Ask a question..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()
 
+# Processing
 if st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant"):
-        with st.status("Analyzing...", expanded=False) as status:
-            history_text = format_history(st.session_state.messages)
-            answer, next_q, sources, videos = get_gemini_response(st.session_state.messages[-1]["content"], history_text)
-            status.update(label="Complete", state="complete")
+        with st.status("Thinking...", expanded=False):
+            ans, nq, src, vids = get_gemini_response(st.session_state.messages[-1]["content"], "")
         
-        render_message({
-            "role": "assistant", "content": answer, "sources": sources, "videos": videos
-        })
-
-    st.session_state.messages.append({
-        "role": "assistant", "content": answer, "sources": sources, "videos": videos
-    })
-    
-    if next_q: st.session_state.suggestions = next_q
+        render_message({"role": "assistant", "content": ans, "sources": src, "videos": vids})
+        
+    st.session_state.messages.append({"role": "assistant", "content": ans, "sources": src, "videos": vids})
+    if nq: st.session_state.suggestions = nq
     st.rerun()
