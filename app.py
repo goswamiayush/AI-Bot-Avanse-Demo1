@@ -65,14 +65,14 @@ st.markdown("""
         box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
     }
 
-    .block-container { padding-top: 6rem !important; padding-bottom: 8rem !important; }
+    .block-container { padding-top: 6rem !important; padding-bottom: 10rem !important; }
 
     /* CHAT MESSAGE CARDS */
     .stChatMessage { background-color: transparent !important; border: none !important; }
     
     /* ASSISTANT BUBBLE */
     div[data-testid="chatAvatarIcon-assistant"] + div {
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
         border: 1px solid #FFFFFF;
         border-radius: 4px 20px 20px 20px;
         padding: 1.5rem;
@@ -115,7 +115,7 @@ st.markdown("""
     /* SUGGESTION BUTTONS */
     .suggestion-label { 
         font-size: 0.8rem; 
-        color: #9CA3AF; 
+        color: #6B7280; 
         font-weight: 600; 
         text-transform: uppercase; 
         letter-spacing: 1px;
@@ -143,19 +143,7 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(212, 175, 55, 0.15);
     }
 
-    /* CUSTOM LOADING ANIMATION CSS */
-    @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-    }
-    @keyframes fadeChange {
-        0% { opacity: 0; transform: scale(0.9); }
-        10% { opacity: 1; transform: scale(1); }
-        90% { opacity: 1; transform: scale(1); }
-        100% { opacity: 0; transform: scale(0.9); }
-    }
-    
-    /* The toggling icon animation */
+    /* LOADING ANIMATION */
     .icon-cycler::after {
         content: '🎓';
         animation: iconCycle 4s infinite;
@@ -178,32 +166,22 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         margin: 10px 0;
     }
-    .loader-fact {
-        color: #6B7280;
-        font-size: 0.9rem;
-        margin-top: 10px;
-        font-style: italic;
-    }
-    .loader-title {
-        color: #003366;
-        font-weight: 700;
-        font-size: 1.1rem;
-        margin-bottom: 5px;
-    }
+    .loader-fact { color: #6B7280; font-size: 0.9rem; margin-top: 10px; font-style: italic; }
+    .loader-title { color: #003366; font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
 
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. FACTS DATA ---
+# --- 3. DATA & FACTS ---
 EDUCATION_FACTS = [
     "Did you know? The USA hosts over 1 million international students annually.",
-    "Fun Fact: Germany offers tuition-free education at public universities for international students.",
+    "Fun Fact: Germany offers tuition-free education at public universities.",
     "Tip: Canada provides a Post-Graduation Work Permit (PGWP) for up to 3 years.",
-    "Insight: UK Master's degrees are typically just 1 year long, saving you time and money.",
+    "Insight: UK Master's degrees are typically just 1 year long.",
     "Did you know? Australia allows international students to work 48 hours per fortnight.",
-    "Fact: The Ivy League consists of 8 private research universities in the Northeastern US.",
+    "Fact: The Ivy League consists of 8 private research universities.",
     "Pro Tip: Apply for your F-1 Visa at least 120 days before your course start date.",
-    "Stat: STEM degree holders often get extended OPT (work training) periods in the USA."
+    "Stat: STEM degree holders often get extended OPT periods in the USA."
 ]
 
 # --- 4. HEADER ---
@@ -219,7 +197,7 @@ st.markdown("""
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except:
-    st.error("⚠️ API Key missing. Please set GEMINI_API_KEY in secrets.")
+    st.error("⚠️ API Key missing.")
     st.stop()
 
 client = genai.Client(api_key=api_key)
@@ -227,17 +205,19 @@ client = genai.Client(api_key=api_key)
 # --- 6. STATE MANAGEMENT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hi there! 👋 I'm your **Avanse Education Expert**.\n\nI can help you with:\n* 🏛️ **University Shortlisting**\n* 💰 **Education Loan Eligibility**\n* 🛂 **Visa Checklists & Timelines**\n\nWhere are you planning to study?"}
+        {"role": "assistant", "content": "Hello! 👋 I'm your Avanse Education Expert.\n\nTo give you the best advice, may I know your **Name** and which **Country** you are dreaming of for your studies?"}
     ]
+
+# Default "User Responses" (Not Bot Questions)
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = ["Cost of MS in USA", "Top UK Universities", "🛂 US Visa Interview Tips", "💰 Avanse Loan Interest Rates"]
+    st.session_state.suggestions = ["I'm interested in the USA 🇺🇸", "Looking at UK Universities 🇬🇧", "Just exploring options 🌍"]
 
 # --- 7. LOGIC FUNCTIONS ---
 def extract_json_and_sources(response):
     text = response.text if response.text else ""
     sources = []
     
-    # Grounding Sources
+    # Grounding
     if response.candidates and response.candidates[0].grounding_metadata:
         md = response.candidates[0].grounding_metadata
         if md.grounding_chunks:
@@ -255,48 +235,56 @@ def extract_json_and_sources(response):
             pass 
 
     answer = data.get("answer")
-    next_questions = data.get("next_questions", [])
+    user_options = data.get("user_options", []) # Renamed from next_questions
     videos = data.get("videos", [])
 
     if not answer:
-        # Fallback cleanup if JSON fails
-        answer = re.sub(r'next_questions:.*', '', text, flags=re.DOTALL).strip()
+        # Fallback
+        answer = re.sub(r'user_options:.*', '', text, flags=re.DOTALL).strip()
         answer = re.sub(r'videos:.*', '', answer, flags=re.DOTALL).strip()
         answer = re.sub(r'```json', '', answer).replace('```', '').strip()
 
-    return answer, next_questions, sources, videos
+    return answer, user_options, sources, videos
 
 def format_history(messages):
-    return "\n".join([f"{m['role']}: {m['content']}" for m in messages[-6:]])
+    return "\n".join([f"{m['role']}: {m['content']}" for m in messages[-10:]]) # Increased context window
 
 def get_gemini_response(query, history):
     try:
+        # STRICT SYSTEM PROMPT FOR BEHAVIOR
         system_prompt = f"""
-        You are an expert AI Counselor for Avanse Financial Services. You help students achieve their study abroad dreams.
+        You are an expert AI Education Counselor for Avanse Financial Services.
         Current Date: {time.strftime("%B %Y")}
         
+        YOUR GOAL:
+        1. Actively guide the student. Don't just answer, LEAD the conversation.
+        2. Gather Profile Info naturally if missing: Name, Target Country, Target Degree, Budget/Exam Scores.
+        3. If you ask a question (e.g., "What is your GPA?"), put it in the "answer" text.
+        
+        CRITICAL RULE FOR SUGGESTIONS (user_options):
+        - The "user_options" JSON list must contain REPLIES the USER might want to say to YOU.
+        - NEVER put a question for the user in "user_options".
+        - BAD OPTION: "What is your budget?" (This confuses the user)
+        - GOOD OPTION: "My budget is 20-30 Lakhs", "I haven't decided yet", "Tell me about Loans"
+        
         TASK:
-        1. Search Google for the latest 2025/2026 data regarding: "{query}"
+        1. Search Google for 2025/2026 data: "{query}" if needed.
         2. Context: {history}
-        3. OUTPUT: Strictly Valid JSON.
+        3. OUTPUT: JSON ONLY.
         
         JSON STRUCTURE:
         {{
-            "answer": "A friendly, professional Markdown answer. Use bolding for key terms. Keep it structured.",
-            "next_questions": ["Short Follow-up 1", "Short Follow-up 2", "Short Follow-up 3"],
-            "videos": ["https://www.youtube.com/watch?v=...", "https://www.youtube.com/watch?v=..."]
+            "answer": "Markdown answer. Friendly, professional. Use emojis. If you need info, ask here.",
+            "user_options": ["User Reply A", "User Reply B", "New Topic C"],
+            "videos": ["https://youtube..."]
         }}
-        
-        IMPORTANT:
-        - Prioritize official university or embassy data. Also, if required relevant questions from user to make it interactive and get tailored and personalized conversation.
-        - "videos": Only include high-quality, relevant YouTube links found in search. If none, return [].
         """
 
         response = client.models.generate_content(
-            model='gemini-2.5-flash', # Or gemini-1.5-pro based on availability
+            model='gemini-2.0-flash', 
             contents=query,
             config=types.GenerateContentConfig(
-                temperature=0.3,
+                temperature=0.4, # Slightly higher for more natural conversation
                 tools=[types.Tool(google_search=types.GoogleSearch())],
                 system_instruction=system_prompt
             )
@@ -304,27 +292,23 @@ def get_gemini_response(query, history):
         return extract_json_and_sources(response)
 
     except Exception as e:
-        return f"⚠️ I encountered a connection issue: {str(e)}", [], [], []
+        return f"⚠️ Connection Issue: {str(e)}", [], [], []
 
 # --- 8. UI COMPONENT RENDERING ---
 def render_message(role, content, sources=None, videos=None):
     with st.chat_message(role):
         st.markdown(content)
         
-        # Modern Source Chips
         if sources:
             links_html = '<div class="source-container">'
             for s in sources:
-                # Truncate title cleanly
                 title = s["title"][:25] + ".." if len(s["title"]) > 25 else s["title"]
                 links_html += f'<a href="{s["url"]}" target="_blank" class="source-chip">🔗 {title}</a>'
             links_html += '</div>'
             st.markdown(links_html, unsafe_allow_html=True)
             
-        # Video Accordion
         if videos:
             with st.expander("📺 Watch Related Videos", expanded=False):
-                # Use columns for a grid layout if there are multiple videos
                 cols = st.columns(min(len(videos), 2))
                 for i, vid_url in enumerate(videos):
                     with cols[i % 2]:
@@ -339,19 +323,19 @@ def render_message(role, content, sources=None, videos=None):
 for msg in st.session_state.messages:
     render_message(msg["role"], msg["content"], msg.get("sources"), msg.get("videos"))
 
-# B. Render Suggestions (Floating or Bottom)
-st.markdown('<div class="suggestion-label">✨ Suggested Topics</div>', unsafe_allow_html=True)
+# B. Render Suggestions (Smart User Replies)
+st.markdown('<div class="suggestion-label">↱ Suggested Replies</div>', unsafe_allow_html=True)
 selected_suggestion = None
 
 if st.session_state.suggestions:
-    # Responsive grid for buttons
     cols = st.columns(len(st.session_state.suggestions))
     for i, suggestion in enumerate(st.session_state.suggestions):
+        # The key ensures uniqueness
         if cols[i].button(suggestion, key=f"sugg_{len(st.session_state.messages)}_{i}"):
             selected_suggestion = suggestion
 
 # C. Input Handling
-user_input = st.chat_input("Ask about universities, loans, or visas...")
+user_input = st.chat_input("Type your answer or question here...")
 if selected_suggestion: user_input = selected_suggestion
 
 if user_input:
@@ -362,26 +346,26 @@ if user_input:
 # D. Generation Step
 if st.session_state.messages[-1]["role"] == "user":
     with st.chat_message("assistant"):
-        # --- THE HOOK: Custom Loader with Random Fact ---
+        # --- THE HOOK: Custom Loader ---
         random_fact = random.choice(EDUCATION_FACTS)
         
         loader_placeholder = st.empty()
         loader_placeholder.markdown(f"""
         <div class="loader-card">
             <div class="icon-cycler"></div>
-            <div class="loader-title">Researching for you...</div>
+            <div class="loader-title">Thinking...</div>
             <div class="loader-fact">{random_fact}</div>
         </div>
         """, unsafe_allow_html=True)
         
         # --- API Call ---
         history_text = format_history(st.session_state.messages)
-        answer, next_q, sources, videos = get_gemini_response(st.session_state.messages[-1]["content"], history_text)
+        answer, user_opts, sources, videos = get_gemini_response(st.session_state.messages[-1]["content"], history_text)
         
-        # --- Remove Loader & Show Result ---
+        # --- Remove Loader ---
         loader_placeholder.empty()
         
-        # Render the result immediately
+        # Render Answer
         st.markdown(answer)
         
         if sources:
@@ -391,7 +375,7 @@ if st.session_state.messages[-1]["role"] == "user":
                 links_html += f'<a href="{s["url"]}" target="_blank" class="source-chip">🔗 {title}</a>'
             links_html += '</div>'
             st.markdown(links_html, unsafe_allow_html=True)
-            
+
         if videos:
             with st.expander("📺 Watch Related Videos", expanded=True):
                 cols = st.columns(min(len(videos), 2))
@@ -408,5 +392,11 @@ if st.session_state.messages[-1]["role"] == "user":
         "videos": videos
     })
     
-    if next_q: st.session_state.suggestions = next_q
+    # Update Suggestions for the NEXT turn
+    if user_opts: 
+        st.session_state.suggestions = user_opts
+    else:
+        # Fallback default suggestions if API returns empty
+        st.session_state.suggestions = ["Tell me about Loans", "Visa Process", "University List"]
+        
     st.rerun()
