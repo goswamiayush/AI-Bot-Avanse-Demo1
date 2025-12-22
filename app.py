@@ -288,7 +288,7 @@ def get_gemini_response(query, history):
         }}
         
         IMPORTANT:
-        - Prioritize official university or embassy data.
+        - Prioritize official university or embassy data. Also, if required relevant questions from user to make it interactive and get tailored and personalized conversation.
         - "videos": Only include high-quality, relevant YouTube links found in search. If none, return [].
         """
 
