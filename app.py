@@ -264,7 +264,7 @@ def get_gemini_response(query, history):
         CRITICAL RULE FOR SUGGESTIONS (user_options):
         - The "user_options" JSON list must contain REPLIES the USER might want to say to YOU.
         - NEVER put a question for the user in "user_options".
-        - BAD OPTION: "What is your budget?","My name is [name]" (This confuses the user)
+        - BAD OPTION: "What is your budget?","My name is [name]....." (This confuses the user)
         - GOOD OPTION: "My budget is 20-30 Lakhs", "I haven't decided yet", "Tell me about Loans"
         
         TASK:
