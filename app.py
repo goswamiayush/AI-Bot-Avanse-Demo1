@@ -210,7 +210,7 @@ if "messages" not in st.session_state:
 
 # Default "User Responses" (Not Bot Questions)
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = ["I'm interested in the USA 🇺🇸", "Looking at UK Universities 🇬🇧", "Just exploring options 🌍"]
+    st.session_state.suggestions = ["I'm interested in the USA", "Looking at UK Universities", "Just exploring options 🌍"]
 
 # --- 7. LOGIC FUNCTIONS ---
 def extract_json_and_sources(response):
@@ -270,7 +270,7 @@ def get_gemini_response(query, history):
         TASK:
         1. Search Google for 2025/2026 data: "{query}" if needed.
         2. Context: {history}
-        3. OUTPUT: JSON ONLY.
+        3. OUTPUT:Strict Valid JSON ONLY.
         
         JSON STRUCTURE:
         {{
@@ -278,6 +278,10 @@ def get_gemini_response(query, history):
             "user_options": ["User Reply A", "User Reply B", "New Topic C"],
             "videos": ["https://youtube..."]
         }}
+
+           IMPORTANT:
+        - Prioritize official university or embassy data.
+        - "videos": Only include high-quality, relevant YouTube links found in search. If none, return [].
         """
 
         response = client.models.generate_content(
