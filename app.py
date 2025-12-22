@@ -230,7 +230,7 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Hi there! 👋 I'm your **Avanse Education Expert**.\n\nI can help you with:\n* 🏛️ **University Shortlisting**\n* 💰 **Education Loan Eligibility**\n* 🛂 **Visa Checklists & Timelines**\n\nWhere are you planning to study?"}
     ]
 if "suggestions" not in st.session_state:
-    st.session_state.suggestions = ["🇺🇸 Cost of MS in USA", "🇬🇧 Top UK Universities", "🛂 US Visa Interview Tips", "💰 Avanse Loan Interest Rates"]
+    st.session_state.suggestions = ["Cost of MS in USA", "Top UK Universities", "🛂 US Visa Interview Tips", "💰 Avanse Loan Interest Rates"]
 
 # --- 7. LOGIC FUNCTIONS ---
 def extract_json_and_sources(response):
