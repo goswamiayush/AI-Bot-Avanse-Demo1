@@ -285,7 +285,7 @@ def get_gemini_response(query, history):
         """
 
         response = client.models.generate_content(
-            model='gemma-3-1b', 
+            model='gemini-2.0-flash-lite', 
             contents=query,
             config=types.GenerateContentConfig(
                 temperature=0.4, # Slightly higher for more natural conversation
